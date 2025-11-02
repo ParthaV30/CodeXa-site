@@ -1,0 +1,53 @@
+@use '../utilities/colors' as *;
+*,
+*::after,
+*::before {
+	margin: 0;
+	padding: 0;
+  line-height: 1.5em;
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 62.5%;
+	scroll-behavior: smooth;
+	scroll-padding-top: 5rem;
+}
+
+body {
+  position: relative;
+  background: $fourth-section-gradient;
+	font-family: 'Violet Sans';
+  max-width: 100vw;
+}
+
+main {
+  overflow-x: hidden;
+}
+
+a {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+}
+
+button {
+	font-family: inherit;
+}
+
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-weight: normal;
+}
+
+section {
+  img {
+    font: inherit;
+    color: #e0e0e0;
+    font-size: 2rem;
+    line-height: 1.5em;
+  }
+}

@@ -1,0 +1,44 @@
+@use 'utilities/colors' as *;
+@use 'base/reset' as *;
+@use 'base/fonts' as *;
+@use 'utilities/classes';
+@use 'components/buttons' as *;
+@use 'components/scrollbar' as *;
+@use 'layouts/navigation' as *;
+@use 'layouts/header' as *;
+@use 'layouts/about-us' as abt;
+@use 'layouts/services' as *;
+@use 'layouts/projects' as *;
+@use 'layouts/processes' as *;
+@use 'layouts/characteristics' as *;
+@use 'layouts/faq' as *;
+@use 'layouts/contact' as *;
+@use 'layouts/pricing' as *;
+@use 'layouts/whoweare' as *;
+@use 'layouts/footer' as *;
+
+@media (min-width: 576px) {
+	html {
+		font-size: 68.75%;
+	}
+}
+@media (min-width: 768px) {
+	html {
+		font-size: 75%;
+	}
+}
+@media (min-width: 992px) {
+	html {
+		font-size: 81.25%;
+	}
+}
+@media (min-width: 1200px) {
+	html {
+		font-size: 87.5%;
+	}
+}
+@media (min-width: 1400px) {
+	html {
+		font-size: 93.75%;
+	}
+}
