@@ -118,21 +118,28 @@ const renderProject = (project, renderShowcase) => {
 		['content-date'],
 		project.date
 	);
-	descContent.append(contentMain, contentDate);
-	const descBtns = makeCustomElement('div', ['desc-btns']);
+	// Create content section
+descContent.append(contentMain, contentDate);
+
+// Create button container
+const descBtns = makeCustomElement('div', ['desc-btns']);
+
+// Create visit button only when a visit URL is provided
+if (project.visit && !descBtns.querySelector('.button.primary')) { // ensures no duplicate
 	const visitBtn = makeCustomElement('a', ['button', 'primary']);
 	visitBtn.setAttribute('href', project.visit);
-  visitBtn.setAttribute('target', '_blank')
-	visitBtn.setAttribute('rel', 'noopener')
+	visitBtn.setAttribute('target', '_blank');
+	visitBtn.setAttribute('rel', 'noopener');
+
 	const visitIcon = makeCustomElement('i', ['bx', 'bx-globe']);
 	visitBtn.append('Visit', visitIcon);
-	const codeBtn = makeCustomElement('a', ['button', 'secondary']);
-	codeBtn.setAttribute('href', project.code);
-  codeBtn.setAttribute('target', '_blank')
-	codeBtn.setAttribute('rel', 'noopener')
-	const codeIcon = makeCustomElement('i', ['bx', 'bx-code-alt']);
-	codeBtn.append('Code', codeIcon);
-	descBtns.append(visitBtn, codeBtn);
+
+	descBtns.append(visitBtn);
+}
+
+// Append buttons to main container once
+descContent.append(descBtns);
+
 	projectDesc.append(descHeading, descContent, descBtns);
 	if (renderShowcase) {
 		const projectShowcase = makeCustomElement('div', ['project-showcase']);
@@ -389,7 +396,7 @@ const renderDesktopOrMobile = () => {
       title: 'PowerHouse FireWork',
       tag: 'Design and construction',
       date: '26.04.2023',
-      visit: 'https://rebax.pl',
+      
       content: 'PowerHouse Crackers, a local fireworks retailer, needed a vibrant online presence to match the energy of their brand. We delivered a festive, user-friendly website and a tailored digital marketing strategy that helped them reach more customers and boost seasonal sales.'
     }
   ]
