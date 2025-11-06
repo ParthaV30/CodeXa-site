@@ -46,11 +46,11 @@ pipeline {
                 script {
                     echo "--- Checking if port ${HOST_PORT} is already in use ---"
                     sh """
-                        CONTAINER_ID=\$(sudo docker ps --filter "publish=${HOST_PORT}" --format "{{.ID}}")
+                        CONTAINER_ID=\$(docker ps --filter "publish=${HOST_PORT}" --format "{{.ID}}")
                         if [ ! -z "\$CONTAINER_ID" ]; then
                             echo "Port ${HOST_PORT} in use by container \$CONTAINER_ID. Stopping it..."
-                            sudo docker stop \$CONTAINER_ID || true
-                            sudo docker rm \$CONTAINER_ID || true
+                            docker stop \$CONTAINER_ID || true
+                            docker rm \$CONTAINER_ID || true
                         else
                             echo "Port ${HOST_PORT} is free ✅"
                         fi
