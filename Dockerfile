@@ -10,5 +10,5 @@ COPY . /usr/share/nginx/html
 # Expose port 80 inside container (we'll map to 8082 on host)
 EXPOSE 80
 
-# Run Nginx in foreground
+# Run Nginx in foregroundll
 CMD ["nginx", "-g", "daemon off;"]
