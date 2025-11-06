@@ -2,8 +2,7 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = "heisenbergzz/codexa-site:${env.BUILD_NUMBER}"
-    DOCKER_LATEST = "heisenbergzz/codexa-site:latest"
+    IMAGE_NAME = "heisenbergzz/codexa-site"
     EC2_HOST = "ubuntu@107.20.108.153"
   }
 
@@ -16,9 +15,8 @@ pipeline {
 
     stage('Build Docker Image') {
       steps {
-        script {
-          docker.build(DOCKER_IMAGE)
-        }
+        sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .'
+        sh 'docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest'
       }
     }
 
@@ -27,9 +25,8 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
           sh '''
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
-            docker push ${DOCKER_IMAGE}
-            docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
-            docker push ${DOCKER_LATEST}
+            docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+            docker push ${IMAGE_NAME}:latest
           '''
         }
       }
@@ -40,14 +37,10 @@ pipeline {
         sshagent(['ec2-ssh-cred']) {
           sh '''
             ssh -o StrictHostKeyChecking=no $EC2_HOST "
-              echo '--- Pulling latest CodeXa image ---' &&
-              docker pull ${DOCKER_LATEST} &&
-              echo '--- Stopping old container (if any) ---' &&
+              docker pull ${IMAGE_NAME}:latest &&
               docker stop codexa-site || true &&
               docker rm codexa-site || true &&
-              echo '--- Starting new container ---' &&
-              docker run -d --name codexa-site -p 8082:80 ${DOCKER_LATEST} &&
-              echo '--- Deployment complete for rturox.com ---'
+              docker run -d --name codexa-site -p 8082:80 ${IMAGE_NAME}:latest
             "
           '''
         }
@@ -57,10 +50,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ Deployment successful! Visit https://rturox.com"
+      echo "✅ Deployment successful! rturox.com is live."
     }
     failure {
-      echo "❌ Deployment failed. Check Jenkins console output for details."
+      echo "❌ Deployment failed. Check Jenkins logs."
     }
   }
 }
