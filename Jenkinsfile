@@ -1,69 +1,87 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    IMAGE_NAME = "heisenbergzz/codexa-site"
-    EC2_HOST = "ubuntu@107.20.108.153"
-  }
-
-  stages {
-    stage('Checkout Code') {
-      steps {
-        // Clone your CodeXa-site repo
-        git branch: 'master', url: 'https://github.com/ParthaV30/CodeXa-site.git'
-      }
+    environment {
+        IMAGE_NAME = "codexa-site"
+        CONTAINER_NAME = "codexa-container"
+        HOST_PORT = "8082"
+        CONTAINER_PORT = "80"
+        REPO_URL = "https://github.com/ParthaV30/CodeXa-site.git"
     }
 
-    stage('Build Docker Image') {
-      steps {
-        dir('CodeXa-site') {
-          sh '''
-            echo "--- Building Docker image for rturox.com ---"
-            docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-            docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
-          '''
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: "${REPO_URL}"
+            }
         }
-      }
-    }
 
-    stage('Push Docker Image to Docker Hub') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
-          sh '''
-            echo "--- Logging into Docker Hub ---"
-            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
-            echo "--- Pushing Docker images ---"
-            docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-            docker push ${IMAGE_NAME}:latest
-          '''
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "--- Building Docker image for rturox.com ---"
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploy to EC2') {
-      steps {
-        sshagent(['ec2-ssh-cred']) {
-          sh '''
-            echo "--- Deploying to EC2 107.20.108.153 ---"
-            ssh -o StrictHostKeyChecking=no $EC2_HOST "
-              docker pull ${IMAGE_NAME}:latest &&
-              docker stop codexa-site || true &&
-              docker rm codexa-site || true &&
-              docker run -d --name codexa-site -p 8082:80 ${IMAGE_NAME}:latest &&
-              echo '--- Deployment complete ---'
-            "
-          '''
+        stage('Cleanup Old Container') {
+            steps {
+                script {
+                    echo "--- Cleaning up old container (if exists) ---"
+                    sh """
+                        if [ \$(docker ps -aq -f name=${CONTAINER_NAME}) ]; then
+                            echo "Stopping and removing existing container..."
+                            docker stop ${CONTAINER_NAME} || true
+                            docker rm ${CONTAINER_NAME} || true
+                        fi
+                    """
+                }
+            }
         }
-      }
-    }
-  }
 
-  post {
-    success {
-      echo "✅ Deployment successful! Visit https://rturox.com"
+        stage('Run New Container') {
+            steps {
+                script {
+                    echo "--- Running new container for rturox.com ---"
+                    sh "docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}:latest"
+                }
+            }
+        }
+
+        stage('Clean Dangling Images') {
+            steps {
+                script {
+                    sh "docker image prune -f || true"
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    echo "--- Checking if site is live on port ${HOST_PORT} ---"
+                    sh """
+                        sleep 5
+                        if curl -s http://localhost:${HOST_PORT} | grep -q '<html>'; then
+                            echo 'Health check passed ✅'
+                        else
+                            echo 'Health check failed ❌'
+                            exit 1
+                        fi
+                    """
+                }
+            }
+        }
     }
-    failure {
-      echo "❌ Deployment failed. Check Jenkins logs for details."
+
+    post {
+        success {
+            echo "✅ Deployment successful! Visit: http://rturox.com"
+        }
+        failure {
+            echo "❌ Deployment failed. Check Jenkins logs for details."
+        }
     }
-  }
 }
