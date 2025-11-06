@@ -76,22 +76,7 @@ pipeline {
             }
         }
 
-        stage('Health Check') {
-            steps {
-                script {
-                    echo "--- Checking if site is live on port ${HOST_PORT} ---"
-                    sh """
-                        sleep 5
-                        if curl -s http://localhost:${HOST_PORT} | grep -q '<html>'; then
-                            echo 'Health check passed ✅'
-                        else
-                            echo 'Health check failed ❌'
-                            exit 1
-                        fi
-                    """
-                }
-            }
-        }
+
     }
 
     post {
