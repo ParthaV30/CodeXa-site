@@ -9,14 +9,20 @@ pipeline {
   stages {
     stage('Checkout Code') {
       steps {
+        // Clone your CodeXa-site repo
         git branch: 'master', url: 'https://github.com/ParthaV30/CodeXa-site.git'
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .'
-        sh 'docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest'
+        dir('CodeXa-site') {
+          sh '''
+            echo "--- Building Docker image for rturox.com ---"
+            docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+            docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
+          '''
+        }
       }
     }
 
@@ -24,7 +30,9 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
           sh '''
+            echo "--- Logging into Docker Hub ---"
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+            echo "--- Pushing Docker images ---"
             docker push ${IMAGE_NAME}:${BUILD_NUMBER}
             docker push ${IMAGE_NAME}:latest
           '''
@@ -36,11 +44,13 @@ pipeline {
       steps {
         sshagent(['ec2-ssh-cred']) {
           sh '''
+            echo "--- Deploying to EC2 107.20.108.153 ---"
             ssh -o StrictHostKeyChecking=no $EC2_HOST "
               docker pull ${IMAGE_NAME}:latest &&
               docker stop codexa-site || true &&
               docker rm codexa-site || true &&
-              docker run -d --name codexa-site -p 8082:80 ${IMAGE_NAME}:latest
+              docker run -d --name codexa-site -p 8082:80 ${IMAGE_NAME}:latest &&
+              echo '--- Deployment complete ---'
             "
           '''
         }
@@ -50,10 +60,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ Deployment successful! rturox.com is live."
+      echo "✅ Deployment successful! Visit https://rturox.com"
     }
     failure {
-      echo "❌ Deployment failed. Check Jenkins logs."
+      echo "❌ Deployment failed. Check Jenkins logs for details."
     }
   }
 }
