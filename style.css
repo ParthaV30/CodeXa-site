@@ -338,6 +338,7 @@ body {
   color: var(--text);
 }
 
+
 .team-slider, .projects-slider {
   position: relative;
   display: flex;
