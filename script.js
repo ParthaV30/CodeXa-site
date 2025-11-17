@@ -189,3 +189,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSizes();
   }
 })();
+
+const jsonLdData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Rturox-Tech",
+  "description": "Professional web development and digital solutions company",
+  "url": "https://www.rturox-tech.com",
+  "logo": "https://www.rturox-tech.com/assets/logo.png",
+  "sameAs": [
+    "https://www.linkedin.com/company/rturox-tech",
+    "https://www.instagram.com/rturox.tech"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "Customer Service",
+    "email": "you@example.com"
+  }
+};
