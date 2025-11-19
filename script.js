@@ -10,6 +10,11 @@ function debounce(fn, wait = 120) {
 }
 
 /* ======================
+   Mobile Detection
+   ====================== */
+const isMobile = () => window.innerWidth <= 768;
+
+/* ======================
    Scroll reveal (IntersectionObserver)
    ====================== */
 (function initReveal() {
@@ -206,7 +211,7 @@ document.addEventListener('mousemove', (e) => {
   mouseX = e.clientX;
   mouseY = e.clientY;
   const container = document.getElementById('spiderWebContainer');
-  if (container) {
+  if (container && !isMobile()) {
     const offsetX = (mouseX / window.innerWidth - 0.5) * 30;
     const offsetY = (mouseY / window.innerHeight - 0.5) * 30;
     container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
@@ -217,6 +222,8 @@ document.addEventListener('mousemove', (e) => {
    Spider Web Canvas Animation
    ====================== */
 (function initSpiderWeb() {
+  if (isMobile()) return;
+  
   const canvas = document.getElementById('spiderCanvas');
   if (!canvas) return;
   
@@ -225,6 +232,7 @@ document.addEventListener('mousemove', (e) => {
   canvas.height = window.innerHeight;
   
   const spiders = [];
+  const microSpiders = [];
   const webNodes = [];
   
   class Spider {
@@ -270,6 +278,39 @@ document.addEventListener('mousemove', (e) => {
       ctx.beginPath();
       ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+    }
+  }
+  
+  class MicroSpider {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 1;
+      this.vy = (Math.random() - 0.5) * 1;
+      this.size = Math.random() * 1 + 0.5;
+      this.angle = 0;
+    }
+    
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vx *= 0.99;
+      this.vy *= 0.99;
+      this.angle += 0.1;
+      
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+    
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = 'rgba(255, 107, 53, 0.6)';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
   }
@@ -342,6 +383,7 @@ document.addEventListener('mousemove', (e) => {
   }
   
   for (let i = 0; i < 8; i++) spiders.push(new Spider());
+  for (let i = 0; i < 20; i++) microSpiders.push(new MicroSpider());
   initWeb();
   
   function animate() {
@@ -353,6 +395,11 @@ document.addEventListener('mousemove', (e) => {
     spiders.forEach(s => {
       s.update();
       s.draw();
+    });
+    
+    microSpiders.forEach(m => {
+      m.update();
+      m.draw();
     });
     
     requestAnimationFrame(animate);
@@ -371,6 +418,8 @@ document.addEventListener('mousemove', (e) => {
    3D Spider Web (Three.js)
    ====================== */
 (function init3DWeb() {
+  if (isMobile()) return;
+  
   const container = document.getElementById('spiderWebContainer');
   if (!container || typeof THREE === 'undefined') return;
   
