@@ -267,9 +267,7 @@ body {
   min-height: 70vh;
   display: grid;
   align-items: center;
-  background:
-    radial-gradient(1200px 600px at 10% 20%, rgba(211,47,47,0.15), transparent),
-    radial-gradient(800px 400px at 90% 10%, rgba(255,107,53,0.12), transparent);
+  background: var(--bg);
   position: relative;
   overflow: hidden;
 }
