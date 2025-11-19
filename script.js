@@ -56,12 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-
-
 /* ======================
-   Reusable slider initializer (no dots, arrows only)
-   - supports multiple sliders (.team-slider, .projects-slider)
-   - touch drag, keyboard arrows, debounced resize
+   Reusable slider initializer
    ====================== */
 (function initSliders() {
   const wrappers = Array.from(document.querySelectorAll('.team-slider, .projects-slider'));
@@ -204,7 +200,7 @@ const jsonLdData = {
 };
 
 /* ======================
-   Multiple Orb Webs Canvas Animation
+   Multiple Orb Webs with Spider Bots
    ====================== */
 (function initOrbWebs() {
   const canvas = document.getElementById('orbCanvas');
@@ -215,7 +211,33 @@ const jsonLdData = {
   canvas.height = window.innerHeight;
   
   const orbs = [];
+  const spiders = [];
   let mouseX = 0, mouseY = 0;
+  let imageBounds = [];
+  let spawnProgress = 0;
+  const SPAWN_DURATION = 400;
+  
+  function updateImageBounds() {
+    imageBounds = [];
+    document.querySelectorAll('img').forEach(img => {
+      const rect = img.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        imageBounds.push({
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    });
+  }
+  
+  function isOverImage(x, y) {
+    return imageBounds.some(img => 
+      x >= img.x && x <= img.x + img.width &&
+      y >= img.y && y <= img.y + img.height
+    );
+  }
   
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -297,25 +319,129 @@ const jsonLdData = {
       });
     }
     
-    draw() {
+    draw(progress) {
       ctx.strokeStyle = 'rgba(255, 107, 53, 0.2)';
       ctx.lineWidth = 1;
       this.connections.forEach(([i, j]) => {
         const n1 = this.nodes[i];
         const n2 = this.nodes[j];
-        ctx.beginPath();
-        ctx.moveTo(n1.x, n1.y);
-        ctx.lineTo(n2.x, n2.y);
-        ctx.stroke();
+        if (!isOverImage(n1.x, n1.y) && !isOverImage(n2.x, n2.y)) {
+          const minX = Math.min(n1.x, n2.x);
+          const spawnX = minX / window.innerWidth;
+          if (progress >= spawnX) {
+            ctx.beginPath();
+            ctx.moveTo(n1.x, n1.y);
+            ctx.lineTo(n2.x, n2.y);
+            ctx.stroke();
+          }
+        }
       });
       
       this.nodes.forEach((node, idx) => {
+        if (isOverImage(node.x, node.y)) return;
+        const spawnX = node.x / window.innerWidth;
+        if (progress < spawnX) return;
+        
         const size = idx === 0 ? 4 : 2;
-        ctx.fillStyle = idx === 0 ? 'rgba(255, 107, 53, 0.6)' : 'rgba(211, 47, 47, 0.5)';
+        const glowColor = idx === 0 ? 'rgba(255, 107, 53, 0.2)' : 'rgba(211, 47, 47, 0.15)';
+        const color = idx === 0 ? 'rgba(255, 107, 53, 0.6)' : 'rgba(211, 47, 47, 0.5)';
+        
+        ctx.fillStyle = glowColor;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, size * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
         ctx.fill();
       });
+    }
+  }
+  
+  class Spider {
+    constructor(orbIndex) {
+      this.orbIndex = orbIndex;
+      this.nodeIndex = 0;
+      this.nextNodeIndex = 1;
+      this.progress = 0;
+      this.speed = 0.002 + Math.random() * 0.002;
+      this.angle = 0;
+      this.legPhase = 0;
+    }
+    
+    update() {
+      this.progress += this.speed;
+      if (this.progress >= 1) {
+        this.progress = 0;
+        this.nodeIndex = this.nextNodeIndex;
+        const orb = orbs[this.orbIndex];
+        if (orb) {
+          this.nextNodeIndex = Math.floor(Math.random() * orb.nodes.length);
+        }
+      }
+      
+      const orb = orbs[this.orbIndex];
+      if (orb && orb.nodes[this.nextNodeIndex]) {
+        const n1 = orb.nodes[this.nodeIndex];
+        const n2 = orb.nodes[this.nextNodeIndex];
+        this.angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+      }
+      
+      this.legPhase += 0.1;
+    }
+    
+    draw() {
+      const orb = orbs[this.orbIndex];
+      if (!orb || !orb.nodes[this.nodeIndex] || !orb.nodes[this.nextNodeIndex]) return;
+      
+      const n1 = orb.nodes[this.nodeIndex];
+      const n2 = orb.nodes[this.nextNodeIndex];
+      const x = n1.x + (n2.x - n1.x) * this.progress;
+      const y = n1.y + (n2.y - n1.y) * this.progress;
+      
+      if (isOverImage(x, y)) return;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = 'rgba(211, 47, 47, 0.9)';
+      ctx.strokeStyle = 'rgba(211, 47, 47, 0.9)';
+      ctx.lineWidth = 0.8;
+      
+      ctx.beginPath();
+      ctx.arc(0, -1, 1, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 0.2, 1, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 1.2, 1.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      for (let i = 0; i < 4; i++) {
+        const side = i < 2 ? -1 : 1;
+        const yOff = (i % 2) * 1.2 - 0.6;
+        const legBend = Math.sin(this.legPhase + i * Math.PI / 2) * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(side * 1, yOff);
+        ctx.lineTo(side * (3 + legBend), yOff + 0.8);
+        ctx.stroke();
+      }
+      
+      for (let i = 0; i < 4; i++) {
+        const side = i < 2 ? -1 : 1;
+        const yOff = (i % 2) * 1.2 + 0.6;
+        const legBend = Math.sin(this.legPhase + i * Math.PI / 2 + Math.PI / 4) * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(side * 1, yOff);
+        ctx.lineTo(side * (3 + legBend), yOff + 1);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
     }
   }
   
@@ -334,23 +460,51 @@ const jsonLdData = {
   }
   
   createOrbs();
+  updateImageBounds();
   
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    if (spawnProgress < 1) {
+      spawnProgress += 1 / SPAWN_DURATION;
+    }
+    
     orbs.forEach(orb => {
       orb.update();
-      orb.draw();
+      orb.draw(spawnProgress);
     });
+    
+    if (spawnProgress >= 0.6) {
+      spiders.forEach(spider => {
+        spider.update();
+        spider.draw();
+      });
+    }
+    
+    if (spawnProgress >= 1 && spiders.length === 0) {
+      for (let i = 0; i < Math.min(orbs.length, 12); i++) {
+        spiders.push(new Spider(i));
+      }
+    }
     
     requestAnimationFrame(animate);
   }
   
   animate();
   
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.zIndex = '1';
+  canvas.style.pointerEvents = 'none';
+  
   window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     createOrbs();
+    updateImageBounds();
   });
+  
+  window.addEventListener('scroll', updateImageBounds);
+  document.addEventListener('load', updateImageBounds, true);
 })();
