@@ -28,9 +28,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/>
    <script src="script.js" defer>  </script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 </head>
 <body>
+<!-- Spider Web Canvas -->
+<canvas id="spiderCanvas" style="position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none;"></canvas>
 <!-- NAV -->
 <header>
   <nav class="nav" id="nav">
@@ -79,9 +82,10 @@
 
   <!-- Hero -->
   <section class="hero section" id="hero">
+    <div id="spiderWebContainer" style="position: absolute; top: 0; right: 0; width: 400px; height: 400px; z-index: 0;"></div>
     <div class="container hero-grid">
       <div class="reveal" data-delay="0">
-        <span class="tag">Rturox-Tech</span>
+        <span class="tag spider-tag">🕷️ Rturox-Tech</span>
         <h1>Bring your business online with our work</h1>
         <p class="sub">Crafted by coders. Driven by dedication. Shared with the world.</p>
         <a class="btn" href="#about-us">About us</a>
@@ -95,7 +99,7 @@
   <!-- About -->
   <section class="section" id="about-us">
     <div class="container">
-      <h2 class="reveal" data-delay="0">We are a tech team built on creativity and collaboration</h2>
+      <h2 class="reveal" data-delay="0">🕸️ We are a tech team built on creativity and collaboration</h2>
       <div class="grid-2 cards">
         <div class="card reveal" data-delay="100">
           <h3>Where fresh minds meet bold ideas</h3>
@@ -120,7 +124,7 @@
   <!-- Services -->
   <section class="section" id="services">
     <div class="container">
-      <h2 class="reveal" data-delay="0">What We Build — Technology That Elevates Your Brand</h2>
+      <h2 class="reveal" data-delay="0">🕷️ What We Build — Technology That Elevates Your Brand</h2>
       <div class="cards grid-4">
         <div class="card reveal" data-delay="100">
           <h3>Projects</h3>
@@ -168,7 +172,7 @@
 
       <li class="card slide-item" role="listitem" data-delay="200">
         <img src="assets/firework.png" alt="Builders" class="card-img"/>
-        <h3>Constraction</h3>
+        <h3>Construction</h3>
         <p class="muted">Construction plus marketing strategy.</p>
         <div class="card-actions">
           <a href="#" class="btn">Visit</a>

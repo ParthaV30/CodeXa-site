@@ -94,10 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function setTransform(x, animate = true) {
       if (!animate) track.style.transition = 'none';
-      // use translate3d for GPU acceleration
       track.style.transform = `translate3d(-${x}px, 0, 0)`;
       if (!animate) {
-        // clear transition after painting
         requestAnimationFrame(() => { track.style.transition = ''; });
       }
     }
@@ -114,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
       btnNext.disabled = index >= Math.max(0, total - visible);
     }
 
-    // arrow handlers
     if (btnPrev) btnPrev.addEventListener('click', () => {
       index = Math.max(0, index - Math.max(1, visibleCount() - 1));
       clampIndex();
@@ -126,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
       goTo(index);
     });
 
-    // pointer / drag support using requestAnimationFrame
     let isDown = false, startX = 0, startScroll = 0;
     function onPointerDown(e) {
       isDown = true;
@@ -140,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isDown) return;
       const dx = e.clientX - startX;
       const tx = Math.max(0, startScroll - dx);
-      // throttle with rAF
       if (raf) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         track.style.transform = `translate3d(-${tx}px,0,0)`;
@@ -157,19 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     track.addEventListener('pointerdown', onPointerDown);
-    // pointermove / up with passive false on move is not recommended; rAF helps keep smooth
     track.addEventListener('pointermove', onPointerMove);
     track.addEventListener('pointerup', onPointerUp);
     track.addEventListener('pointercancel', () => { isDown = false; });
 
-    // keyboard support (left/right when wrapper focused)
     wrap.tabIndex = 0;
     wrap.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') { if (btnPrev) btnPrev.click(); }
       if (e.key === 'ArrowRight') { if (btnNext) btnNext.click(); }
     });
 
-    // responsive / dynamic updates (debounced)
     const updateSizes = debounce(() => {
       itemWidth = calcItemWidth();
       gap = parseFloat(getComputedStyle(track).gap) || 16;
@@ -177,13 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
       goTo(index, false);
     }, 120);
 
-    // observe wrapper size and track children changes
     const ro = new ResizeObserver(updateSizes);
     ro.observe(wrap);
     const mo = new MutationObserver(updateSizes);
     mo.observe(track, { childList: true });
 
-    // init
     window.addEventListener('load', updateSizes);
     window.addEventListener('resize', updateSizes);
     updateSizes();
@@ -207,3 +197,231 @@ const jsonLdData = {
     "email": "you@example.com"
   }
 };
+
+/* ======================
+   Cursor Tracking
+   ====================== */
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  const container = document.getElementById('spiderWebContainer');
+  if (container) {
+    const offsetX = (mouseX / window.innerWidth - 0.5) * 30;
+    const offsetY = (mouseY / window.innerHeight - 0.5) * 30;
+    container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  }
+});
+
+/* ======================
+   Spider Web Canvas Animation
+   ====================== */
+(function initSpiderWeb() {
+  const canvas = document.getElementById('spiderCanvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const spiders = [];
+  const webNodes = [];
+  
+  class Spider {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.size = Math.random() * 4 + 2;
+      this.angle = 0;
+    }
+    
+    update() {
+      const dx = mouseX - this.x;
+      const dy = mouseY - this.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < 200) {
+        this.vx -= (dx / dist) * 0.3;
+        this.vy -= (dy / dist) * 0.3;
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vx *= 0.98;
+      this.vy *= 0.98;
+      this.angle += 0.05;
+      
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+    
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = '#d32f2f';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ff6b35';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  
+  function initWeb() {
+    webNodes.length = 0;
+    const cols = 12, rows = 8;
+    const spacingX = canvas.width / cols;
+    const spacingY = canvas.height / rows;
+    
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        webNodes.push({
+          x: i * spacingX + spacingX / 2,
+          y: j * spacingY + spacingY / 2,
+          ox: i * spacingX + spacingX / 2,
+          oy: j * spacingY + spacingY / 2,
+          vx: 0,
+          vy: 0
+        });
+      }
+    }
+  }
+  
+  function drawWeb() {
+    const cols = 12;
+    ctx.strokeStyle = 'rgba(255, 107, 53, 0.2)';
+    ctx.lineWidth = 1;
+    
+    for (let i = 0; i < webNodes.length; i++) {
+      const node = webNodes[i];
+      if ((i + 1) % cols !== 0) {
+        const next = webNodes[i + 1];
+        ctx.beginPath();
+        ctx.moveTo(node.x, node.y);
+        ctx.lineTo(next.x, next.y);
+        ctx.stroke();
+      }
+      if (i + cols < webNodes.length) {
+        const below = webNodes[i + cols];
+        ctx.beginPath();
+        ctx.moveTo(node.x, node.y);
+        ctx.lineTo(below.x, below.y);
+        ctx.stroke();
+      }
+    }
+  }
+  
+  function updateWeb() {
+    webNodes.forEach(node => {
+      const dx = mouseX - node.x;
+      const dy = mouseY - node.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < 150) {
+        node.vx += (dx / dist) * 0.15;
+        node.vy += (dy / dist) * 0.15;
+      }
+      
+      node.vx *= 0.92;
+      node.vy *= 0.92;
+      node.x += node.vx;
+      node.y += node.vy;
+      
+      const restoreDx = node.ox - node.x;
+      const restoreDy = node.oy - node.y;
+      node.vx += restoreDx * 0.02;
+      node.vy += restoreDy * 0.02;
+    });
+  }
+  
+  for (let i = 0; i < 8; i++) spiders.push(new Spider());
+  initWeb();
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    updateWeb();
+    drawWeb();
+    
+    spiders.forEach(s => {
+      s.update();
+      s.draw();
+    });
+    
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
+  
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initWeb();
+  });
+})();
+
+/* ======================
+   3D Spider Web (Three.js)
+   ====================== */
+(function init3DWeb() {
+  const container = document.getElementById('spiderWebContainer');
+  if (!container || typeof THREE === 'undefined') return;
+  
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 400 / 400, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  
+  renderer.setSize(400, 400);
+  renderer.setClearColor(0x000000, 0.1);
+  container.appendChild(renderer.domElement);
+  
+  camera.position.z = 5;
+  
+  const geometry = new THREE.BufferGeometry();
+  const positions = [];
+  const cols = 6, rows = 6;
+  
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      positions.push(
+        (i - cols / 2) * 0.8,
+        (j - rows / 2) * 0.8,
+        Math.sin(i * 0.5) * Math.cos(j * 0.5) * 0.5
+      );
+    }
+  }
+  
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  
+  const material = new THREE.LineBasicMaterial({ color: 0xff6b35, linewidth: 2 });
+  const lines = new THREE.LineSegments(geometry, material);
+  scene.add(lines);
+  
+  const sphereGeom = new THREE.SphereGeometry(0.15, 8, 8);
+  const sphereMat = new THREE.MeshBasicMaterial({ color: 0xd32f2f });
+  const spider = new THREE.Mesh(sphereGeom, sphereMat);
+  spider.position.set(0, 0, 0);
+  scene.add(spider);
+  
+  let time = 0;
+  function animate() {
+    time += 0.01;
+    const normX = (mouseX / window.innerWidth) * 2 - 1;
+    const normY = -(mouseY / window.innerHeight) * 2 + 1;
+    lines.rotation.x = normY * 0.3;
+    lines.rotation.y = normX * 0.3;
+    spider.position.x = Math.sin(time) * 2 + normX * 0.5;
+    spider.position.y = Math.cos(time * 0.7) * 2 + normY * 0.5;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
+})();
