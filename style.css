@@ -168,6 +168,15 @@ body {
   object-fit: contain;
 }
 
+.brand-name {
+  margin-left: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
 .logo-title{
   color: whitesmoke;
   font-size: xx-small;
