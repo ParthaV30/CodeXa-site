@@ -45,14 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   toggle.addEventListener('click', () => {
     const isOpen = navLinks.classList.toggle('active');
+    toggle.classList.toggle('active');
     toggle.setAttribute('aria-expanded', String(isOpen));
   });
 
   navLinks.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       navLinks.classList.remove('active');
+      toggle.classList.remove('active');
       toggle.setAttribute('aria-expanded', 'false');
     });
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!toggle.contains(e.target) && !navLinks.contains(e.target)) {
+      navLinks.classList.remove('active');
+      toggle.classList.remove('active');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
 });
 
