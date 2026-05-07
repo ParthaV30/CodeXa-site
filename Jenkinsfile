@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "codexa-site"
         CONTAINER_NAME = "codexa-container"
         HOST_PORT = "8082"
-        CONTAINER_PORT = "80"
+        CONTAINER_PORT = "3000"
         REPO_URL = "https://github.com/ParthaV30/CodeXa-site.git"
     }
 
